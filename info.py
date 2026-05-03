@@ -90,6 +90,7 @@ EMOJI_MODE = bool(environ.get('EMOJI_MODE', True))
 BUTTON_MODE = is_enabled((environ.get('BUTTON_MODE', "False")), False)
 STREAM_MODE = bool(environ.get('STREAM_MODE', True))
 PREMIUM_STREAM_MODE = bool(environ.get('PREMIUM_STREAM_MODE', False))
+MAINTENANCE = is_enabled(environ.get('MAINTENANCE', "False"), False)
 
 LANGUAGES = {"ᴛᴀᴍɪʟ":"tam","ᴛᴇʟᴜɢᴜ":"tel","ᴇɴɢʟɪsʜ":"eng","ʜɪɴᴅɪ":"hin","ᴊᴀᴘᴀɴᴇsᴇ":"jap"}
 QUALITIES = ["360P", "480P", "720P", "1080P", "2160p"]
