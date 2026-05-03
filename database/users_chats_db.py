@@ -420,6 +420,12 @@ class Database:
     async def update_movie_update_status(self, bot_id, enable):
         await self.update_bot_setting(bot_id, 'UPDATE_NOTIFICATION', enable)
 
+    async def maintenance_status(self, bot_id):
+        return await self.get_bot_setting(bot_id, 'MAINTENANCE', MAINTENANCE)
+
+    async def update_maintenance_status(self, bot_id, enable):
+        await self.update_bot_setting(bot_id, 'MAINTENANCE', enable)
+
     async def increment_file_count(self, user_id):
         if await self.has_premium_access(user_id):
             return
