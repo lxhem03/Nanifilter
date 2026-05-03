@@ -7,8 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-
 @Client.on_message(filters.text & (filters.group | filters.private) & filters.incoming & ~filters.regex(r"^/") & ~filters.user(ADMINS) & ~filters.chat(SUPPORT_CHAT_ID), group=-5)
 async def maintenance_interceptor(bot: Client, message: Message):
     bot_id = bot.me.id
@@ -34,9 +32,7 @@ async def maintenance_callback_interceptor(bot: Client, query: CallbackQuery):
 async def maintenance_cmd(bot: Client, message: Message):
     bot_id = bot.me.id
     is_maintenance = await db.maintenance_status(bot_id)
-    
     status_text = "<b>Enabled 🟢</b>" if is_maintenance else "<b>Disabled 🔴</b>"
-    
     buttons = [
         [
             InlineKeyboardButton(
@@ -49,7 +45,6 @@ async def maintenance_cmd(bot: Client, message: Message):
             )
         ]
     ]
-    
     await message.reply_text(
         text=f"<b>🛠️ Maintenance Mode Status</b>\n\nCurrent Status: {status_text}\n\nUse the buttons below to toggle maintenance mode.",
         reply_markup=InlineKeyboardMarkup(buttons),
@@ -60,18 +55,15 @@ async def maintenance_cmd(bot: Client, message: Message):
 async def maintenance_toggle_callback(bot: Client, query: CallbackQuery):
     bot_id = bot.me.id
     action = query.data.split("_")[1]
-    
     if action == "on":
         await db.update_maintenance_status(bot_id, True)
         await query.answer("Maintenance Mode Enabled 🟢", show_alert=True)
     elif action == "off":
         await db.update_maintenance_status(bot_id, False)
         await query.answer("Maintenance Mode Disabled 🔴", show_alert=True)
-    
     # Update message
     is_maintenance = await db.maintenance_status(bot_id)
     status_text = "<b>Enabled 🟢</b>" if is_maintenance else "<b>Disabled 🔴</b>"
-    
     buttons = [
         [
             InlineKeyboardButton(
@@ -84,7 +76,6 @@ async def maintenance_toggle_callback(bot: Client, query: CallbackQuery):
             )
         ]
     ]
-    
     try:
         await query.message.edit_text(
             text=f"<b>🛠️ Maintenance Mode Status</b>\n\nCurrent Status: {status_text}\n\nUse the buttons below to toggle maintenance mode.",
