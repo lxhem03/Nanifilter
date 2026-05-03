@@ -7,58 +7,59 @@
 
 ## 🥰 Features
 
-- ✅ Dual database support  
-- ✅ Stream Mode Toggle  
-- ✅ 3-Step User Verification  
-- ✅ Custom Verification Time  
-- ✅ 3 Tutorial Support for Verification  
-- ✅ Multi FSub (Admin & Group Support)  
-- ✅ Connect Multiple Channels  
+- ✅ Dual database support
+- ✅ Stream Mode Toggle
+- ✅ 3-Step User Verification
+- ✅ Custom Verification Time
+- ✅ 3 Tutorial Support for Verification
+- ✅ Multi FSub (Admin & Group Support)
+- ✅ Connect Multiple Channels
 - ✅ Request to Join via FSub (Admins Only)
-- ✅ Verification On/Off Feature  
-- ✅ Verified User Counter  
-- ✅ Verified User Database Save  
-- ✅ Premium Membership Management  
+- ✅ Verification On/Off Feature
+- ✅ Verified User Counter
+- ✅ Verified User Database Save
+- ✅ Premium Membership Management
 - ✅ Refer & Earn Premium  
-- ✅ No Shortlinks for Premium Users  
+- ✅ No Shortlinks for Premium Users
 - ✅ Star Payment Feature
-- ✅ File Limit & Quality for Free Users  
+- ✅ File Limit & Quality for Free Users
 - ✅ Stream/Download Features for Premium Users
-- ✅ Best Streaming Website Integration  
-- ✅ Online Streaming & Fast Download  
-- ✅ File Indexing Above 2GB  
-- ✅ Full File Indexing Support  
-- ✅ Auto File Filtering  
-- ✅ Single Filter Button  
-- ✅ Auto File Send  
-- ✅ Bot PM File Send Mode  
-- ✅ Forward Restriction  
-- ✅ File Protection (On/Off)  
-- ✅ PreDVD & CamRip Auto Deletion  
-- ✅ Auto Delete Old Files  
-- ✅ Multiple File Deletion  
-- ✅ Delete Files by Name  
-- ✅ Delete All Files from Database  
-- ✅ Channel for File Deletion Logs  
-- ✅ Advanced AI Spell Check  
-- ✅ Trending Titles  
-- ✅ Top Searching  
-- ✅ Stats & Analytics  
-- ✅ ID & User Info  
-- ✅ User Ban/Unban  
-- ✅ Chat Leave/Disable  
-- ✅ Settings Menu  
-- ✅ Welcome Message  
-- ✅ PM Search On/Off  
-- ✅ Broadcast & Group Broadcast  
-- ✅ Superfast Broadcast  
-- ✅ Metadata Extraction Feature  
-- ✅ Custom IMDb Template  
+- ✅ Best Streaming Website Integration
+- ✅ Online Streaming & Fast Download
+- ✅ File Indexing Above 2GB
+- ✅ Full File Indexing Support
+- ✅ Auto File Filtering
+- ✅ Single Filter Button
+- ✅ Auto File Send
+- ✅ Maintenance Mode
+- ✅ Bot PM File Send Mode
+- ✅ Forward Restriction
+- ✅ File Protection (On/Off)
+- ✅ PreDVD & CamRip Auto Deletion
+- ✅ Auto Delete Old Files
+- ✅ Multiple File Deletion
+- ✅ Delete Files by Name
+- ✅ Delete All Files from Database
+- ✅ Channel for File Deletion Logs
+- ✅ Advanced AI Spell Check
+- ✅ Trending Titles
+- ✅ Top Searching
+- ✅ Stats & Analytics
+- ✅ ID & User Info
+- ✅ User Ban/Unban
+- ✅ Chat Leave/Disable
+- ✅ Settings Menu
+- ✅ Welcome Message
+- ✅ PM Search On/Off
+- ✅ Broadcast & Group Broadcast
+- ✅ Superfast Broadcast
+- ✅ Metadata Extraction Feature
+- ✅ Custom IMDb Template
 - ✅ Custom Caption, Shortener, Log Channel
-- ✅ Custom Cover Support  
-- ✅ Custom Landscape/Portrait Posters  
-- ✅ Auto Post in Update Channel  
-- ✅ Custom Anime, Movies & Series Posts  
+- ✅ Custom Cover Support
+- ✅ Custom Landscape/Portrait Posters
+- ✅ Auto Post in Update Channel
+- ✅ Custom Anime, Movies & Series Posts
 - ✅ Web-App Feature
 - ✅ Language Feature
 - ✅ Fast Mode
