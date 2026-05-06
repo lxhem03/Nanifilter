@@ -341,64 +341,69 @@ async def start(client, message):
                 pass
             return await message.reply('ɴᴏ ꜱᴜᴄʜ ꜰɪʟᴇ ᴇxɪꜱᴛꜱ !')
     
-    files = files_[0]
-    if IS_FILE_LIMIT and not is_premium:
-        used = await db.get_user_file_count(user)
-        hours, minutes = await db.get_time_until_reset(user)
-        if used >= FILES_LIMIT:
-            return await message.reply_photo(
-                photo=random.choice(PICS),
-                caption = f"<b>{message.from_user.mention},\n\n🚫 ʏᴏᴜ’ᴠᴇ ʀᴇᴀᴄʜᴇᴅ ʏᴏᴜʀ ᴅᴀɪʟʏ ʟɪᴍɪᴛ ᴏꜰ {FILES_LIMIT} ꜰɪʟᴇꜱ.\n\n⏱️ ʏᴏᴜʀ ʟɪᴍɪᴛ ʀᴇꜱᴇᴛꜱ ɪɴ {hours}h {minutes}m\n\n<blockquote>💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ꜰᴏʀ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></blockquote></b>",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
-                parse_mode=enums.ParseMode.HTML
-            )
+        files = files_[0]
+        if IS_FILE_LIMIT and not is_premium:
+            used = await db.get_user_file_count(user)
+            hours, minutes = await db.get_time_until_reset(user)
+            if used >= FILES_LIMIT:
+                return await message.reply_photo(
+                    photo=random.choice(PICS),
+                    caption = f"<b>{message.from_user.mention},\n\n🚫 ʏᴏᴜ’ᴠᴇ ʀᴇᴀᴄʜᴇᴅ ʏᴏᴜʀ ᴅᴀɪʟʏ ʟɪᴍɪᴛ ᴏꜰ {FILES_LIMIT} ꜰɪʟᴇꜱ.\n\n⏱️ ʏᴏᴜʀ ʟɪᴍɪᴛ ʀᴇꜱᴇᴛꜱ ɪɴ {hours}h {minutes}m\n\n<blockquote>💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ꜰᴏʀ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></blockquote></b>",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
+                    parse_mode=enums.ParseMode.HTML
+                )
 
-    file_quality = getattr(files, "quality", "")
-    if QUALITY_LIMIT and not is_premium:
-        if not any(q in (files.file_name or "").lower() for q in FREE_QUALITIES):
-            tb = ", ".join(FREE_QUALITIES).upper()
-            await message.reply_photo(
-                photo=random.choice(PICS),
-                caption = f"<b>{message.from_user.mention},\n\nᴛʜɪs ꜰɪʟᴇ ɪs ᴀᴠᴀɪʟᴀʙʟᴇ ᴏɴʟʏ ꜰᴏʀ ᴘʀᴇᴍɪᴜᴍ ᴜsᴇʀs.\n\n👥 ꜰʀᴇᴇ ᴜsᴇʀs ᴄᴀɴ ᴀᴄᴄᴇss {tb} ǫᴜᴀʟɪᴛɪᴇꜱ ᴏɴʟʏ.\n\n<blockquote>💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴜɴʟᴏᴄᴋ ʜɪɢʜᴇʀ ǫᴜᴀʟɪᴛʏ ᴄᴏɴᴛᴇɴᴛ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></blockquote></b>",
-                reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ᴜɴʟᴏᴄᴋ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
-                parse_mode=enums.ParseMode.HTML
-            )
-            return
+        file_quality = getattr(files, "quality", "")
+        if QUALITY_LIMIT and not is_premium:
+            if not any(q in (files.file_name or "").lower() for q in FREE_QUALITIES):
+                tb = ", ".join(FREE_QUALITIES).upper()
+                await message.reply_photo(
+                    photo=random.choice(PICS),
+                    caption = f"<b>{message.from_user.mention},\n\nᴛʜɪs ꜰɪʟᴇ ɪs ᴀᴠᴀɪʟᴀʙʟᴇ ᴏɴʟʏ ꜰᴏʀ ᴘʀᴇᴍɪᴜᴍ ᴜsᴇʀs.\n\n👥 ꜰʀᴇᴇ ᴜsᴇʀs ᴄᴀɴ ᴀᴄᴄᴇss {tb} ǫᴜᴀʟɪᴛɪᴇꜱ ᴏɴʟʏ.\n\n<blockquote>💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴜɴʟᴏᴄᴋ ʜɪɢʜᴇʀ ǫᴜᴀʟɪᴛʏ ᴄᴏɴᴛᴇɴᴛ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></blockquote></b>",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ᴜɴʟᴏᴄᴋ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
+                    parse_mode=enums.ParseMode.HTML
+                )
+                return
 
-    title = clean_filename(files.file_name)
-    size = get_size(files.file_size)
-    cover = files.cover if files.cover else None
-    f_caption = files.caption
-    settings = await get_settings(int(grp_id))            
-    CAPTION = settings.get('caption', FILE_CAPTION)
-    if CAPTION:
-        try:
-            f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
-        except Exception as e:
-            logger.exception(e)
-            f_caption = f_caption
+        title = clean_filename(files.file_name)
+        size = get_size(files.file_size)
+        cover = files.cover if files.cover else None
+        f_caption = files.caption
+        settings = await get_settings(int(grp_id))            
+        CAPTION = settings.get('caption', FILE_CAPTION)
+        if CAPTION:
+            try:
+                f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
+            except Exception as e:
+                logger.exception(e)
+                f_caption = f_caption
 
-    if f_caption is None:
-        f_caption = clean_filename(files.file_name)
-    if IS_FILE_LIMIT and not is_premium:
-        await db.increment_file_count(user)
-        used = await db.get_user_file_count(user)
-        limit_info = f"\n\n📊 ʏᴏᴜ ʜᴀᴠᴇ ʀᴇᴄᴇɪᴠᴇᴅ {used}/{FILES_LIMIT} ꜰʀᴇᴇ ꜰɪʟᴇꜱ ᴛᴏᴅᴀʏ."
-        f_caption += limit_info
-    btn = await stream_buttons(user, file_id)
-    msg = await client.send_cached_media(
-        chat_id=message.from_user.id,
-        file_id=file_id,
-        cover=cover,
-        caption=f_caption,
-        protect_content=settings.get('file_secure', PROTECT_CONTENT),
-        reply_markup=InlineKeyboardMarkup(btn)
-    )
-    k = await msg.reply(f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>", quote=True)     
-    await asyncio.sleep(DELETE_TIME)
-    await msg.delete()
-    await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ/ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
-    return
+        if f_caption is None:
+            f_caption = clean_filename(files.file_name)
+        if IS_FILE_LIMIT and not is_premium:
+            await db.increment_file_count(user)
+            used = await db.get_user_file_count(user)
+            limit_info = f"\n\n📊 ʏᴏᴜ ʜᴀᴠᴇ ʀᴇᴄᴇɪᴠᴇᴅ {used}/{FILES_LIMIT} ꜰʀᴇᴇ ꜰɪʟᴇꜱ ᴛᴏᴅᴀʏ."
+            f_caption += limit_info
+        btn = await stream_buttons(user, file_id)
+        msg = await client.send_cached_media(
+            chat_id=message.from_user.id,
+            file_id=file_id,
+            cover=cover,
+            caption=f_caption,
+            protect_content=settings.get('file_secure', PROTECT_CONTENT),
+            reply_markup=InlineKeyboardMarkup(btn)
+        )
+        k = await msg.reply(f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>", quote=True)     
+        await asyncio.sleep(DELETE_TIME)
+        await msg.delete()
+        await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ/ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
+        return
+    except StopPropagation:
+        raise
+    except Exception as e:
+        logger.exception(f"Error In /start command - {e}")
+        pass
 
 @Client.on_message(filters.command('logs') & filters.user(ADMINS))
 async def log_file(bot, message):
