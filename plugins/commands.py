@@ -280,68 +280,66 @@ async def start(client, message):
                 logger.exception(e)
                 return
 
-    user = message.from_user.id
-    is_premium = await db.has_premium_access(user)
-    settings = await get_settings(int(grp_id))
-    if not files_:
-        raw = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
-        sep = raw.find(b"_")
-        if sep == -1:
-            raise ValueError("Invalid encoded data")
-        pre = raw[:sep].decode("ascii")
-        file_id = raw[sep + 1:].decode("latin1")
-        # pre, file_id = ((base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))).decode("utf-8")).split("_", 1)
-        try:
-            cover = None
-            if COVER:
-                details= await get_file_details(file_id)
-                cover = details.get('cover', None)
-            btn = await stream_buttons(user, file_id)
-            if IS_FILE_LIMIT and not is_premium:
-                used = await db.get_user_file_count(user)
-                hours, minutes = await db.get_time_until_reset(user)
-                if used >= FILES_LIMIT:
-                    return await message.reply_photo(
-                        photo=random.choice(PICS),
-                        caption = f"<b>{message.from_user.mention},\n\n🚫 ʏᴏᴜ’ᴠᴇ ʀᴇᴀᴄʜᴇᴅ ʏᴏᴜʀ ᴅᴀɪʟʏ ʟɪᴍɪᴛ ᴏꜰ {FILES_LIMIT} ꜰɪʟᴇꜱ.\n\n⏱️ ʏᴏᴜʀ ʟɪᴍɪᴛ ʀᴇꜱᴇᴛꜱ ɪɴ {hours}h {minutes}m\n\n💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ꜰᴏʀ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></b>",
-                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
-                        parse_mode=enums.ParseMode.HTML
-                    )
-
-            msg = await client.send_cached_media(
-                chat_id=user,
-                cover=cover,
-                file_id=file_id,
-                protect_content=settings.get('file_secure', PROTECT_CONTENT),
-                reply_markup=InlineKeyboardMarkup(btn))
-
-            filetype = msg.media
-            file = getattr(msg, filetype.value)
-            title = clean_filename(file.file_name)
-            size=get_size(file.file_size)
-            f_caption = f"<code>{title}</code>"
-            settings = await get_settings(int(grp_id))
-            CAPTION = settings.get('caption', FILE_CAPTION)
-            if CAPTION:
-                try:
-                    f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='')
-                except:
-                    return
-            if IS_FILE_LIMIT and not is_premium:
-                await db.increment_file_count(user)
-                used = await db.get_user_file_count(user)
-                limit_info = f"\n\n📊 ʏᴏᴜ ʜᴀᴠᴇ ʀᴇᴄᴇɪᴠᴇᴅ {used}/{FILES_LIMIT} ꜰʀᴇᴇ ꜰɪʟᴇꜱ ᴛᴏᴅᴀʏ."
-                f_caption += limit_info
-            await msg.edit_caption(f_caption, reply_markup=InlineKeyboardMarkup(btn))
-            k = await msg.reply(f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>", quote=True)     
-            await asyncio.sleep(DELETE_TIME)
-            await msg.delete()
-            await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ/ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
-            return
-        except Exception as e:
-            logger.exception(e)
-            pass
-        return await message.reply('ɴᴏ ꜱᴜᴄʜ ꜰɪʟᴇ ᴇxɪꜱᴛꜱ !')
+        user = message.from_user.id
+        is_premium = await db.has_premium_access(user)
+        settings = await get_settings(int(grp_id))
+        if not files_:
+            raw = base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
+            sep = raw.find(b"_")
+            if sep == -1:
+                raise ValueError("Invalid encoded data")
+            pre = raw[:sep].decode("ascii")
+            file_id = raw[sep + 1:].decode("latin1")
+            # pre, file_id = ((base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))).decode("utf-8")).split("_", 1)
+            try:
+                cover = None
+                if COVER:
+                    details= await get_file_details(file_id)
+                    cover = details.get('cover', None)
+                btn = await stream_buttons(user, file_id)
+                if IS_FILE_LIMIT and not is_premium:
+                    used = await db.get_user_file_count(user)
+                    hours, minutes = await db.get_time_until_reset(user)
+                    if used >= FILES_LIMIT:
+                        return await message.reply_photo(
+                            photo=random.choice(PICS),
+                            caption = f"<b>{message.from_user.mention},\n\n🚫 ʏᴏᴜ’ᴠᴇ ʀᴇᴀᴄʜᴇᴅ ʏᴏᴜʀ ᴅᴀɪʟʏ ʟɪᴍɪᴛ ᴏꜰ {FILES_LIMIT} ꜰɪʟᴇꜱ.\n\n⏱️ ʏᴏᴜʀ ʟɪᴍɪᴛ ʀᴇꜱᴇᴛꜱ ɪɴ {hours}h {minutes}m\n\n💎 <i>ᴜᴘɢʀᴀᴅᴇ ᴛᴏ ᴘʀᴇᴍɪᴜᴍ ꜰᴏʀ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇꜱꜱ ᴀɴᴅ ᴇxᴄʟᴜsɪᴠᴇ ꜰᴇᴀᴛᴜʀᴇs.</i></b>",
+                            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("💎 ʙᴜʏ ᴘʀᴇᴍɪᴜᴍ 💎", callback_data='premium')]]),
+                            parse_mode=enums.ParseMode.HTML
+                        )
+                msg = await client.send_cached_media(
+                    chat_id=user,
+                    cover=cover,
+                    file_id=file_id,
+                    protect_content=settings.get('file_secure', PROTECT_CONTENT),
+                    reply_markup=InlineKeyboardMarkup(btn))
+                filetype = msg.media
+                file = getattr(msg, filetype.value)
+                title = clean_filename(file.file_name)
+                size=get_size(file.file_size)
+                f_caption = f"<code>{title}</code>"
+                settings = await get_settings(int(grp_id))
+                CAPTION = settings.get('caption', FILE_CAPTION)
+                if CAPTION:
+                    try:
+                        f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='')
+                    except:
+                        return
+                if IS_FILE_LIMIT and not is_premium:
+                    await db.increment_file_count(user)
+                    used = await db.get_user_file_count(user)
+                    limit_info = f"\n\n📊 ʏᴏᴜ ʜᴀᴠᴇ ʀᴇᴄᴇɪᴠᴇᴅ {used}/{FILES_LIMIT} ꜰʀᴇᴇ ꜰɪʟᴇꜱ ᴛᴏᴅᴀʏ."
+                    f_caption += limit_info
+                await msg.edit_caption(f_caption, reply_markup=InlineKeyboardMarkup(btn))
+                k = await msg.reply(f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>", quote=True)     
+                await asyncio.sleep(DELETE_TIME)
+                await msg.delete()
+                await k.edit_text("<b>ʏᴏᴜʀ ᴠɪᴅᴇᴏ/ꜰɪʟᴇ ɪꜱ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ ᴅᴇʟᴇᴛᴇᴅ !!</b>")
+                return
+            except Exception as e:
+                logger.exception(e)
+                pass
+            return await message.reply('ɴᴏ ꜱᴜᴄʜ ꜰɪʟᴇ ᴇxɪꜱᴛꜱ !')
     
     files = files_[0]
     if IS_FILE_LIMIT and not is_premium:
