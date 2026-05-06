@@ -15,7 +15,7 @@ from datetime import datetime
 from database.refer import referdb
 from database.config_db import mdb
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, WebAppInfo
-from pyrogram import Client, filters, enums
+from pyrogram import Client, filters, enums, StopPropagation
 from pyrogram.errors import FloodWait, ChatAdminRequired, UserNotParticipant
 from database.ia_filterdb import Media, Media2, get_file_details, unpack_new_file_id, get_bad_files, save_file
 from database.users_chats_db import db
@@ -28,126 +28,127 @@ BATCH_FILES = {}
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
-    if EMOJI_MODE:
-        try:
-            await message.react(emoji=random.choice(REACTIONS), big=True)
-        except Exception:
-            await message.react(emoji="⚡️")
-            pass
-    m = message
-    if len(m.command) == 2 and m.command[1].startswith(('notcopy', 'sendall')):
-        _, userid, verify_id, file_id = m.command[1].split("_", 3)
-        user_id = int(userid)
-        grp_id = temp.VERIFICATIONS.get(user_id, 0)
-        settings = await get_settings(grp_id)         
-        verify_id_info = await db.get_verify_id_info(user_id, verify_id)
-        if not verify_id_info or verify_id_info["verified"]:
-            return await message.reply("<b>ʟɪɴᴋ ᴇxᴘɪʀᴇᴅ ᴛʀʏ ᴀɢᴀɪɴ...</b>")
-        ist_timezone = pytz.timezone('Asia/Kolkata')
-        if await db.user_verified(user_id):
-            key = "third_time_verified"
-        else:
-            key = "second_time_verified" if await db.is_user_verified(user_id) else "last_verified"
-        current_time = datetime.now(tz=ist_timezone)
-        result = await db.update_notcopy_user(user_id, {key:current_time})
-        await db.update_verify_id_info(user_id, verify_id, {"verified":True})
-        if key == "third_time_verified": 
-            num = 3 
-        else: 
-            num =  2 if key == "second_time_verified" else 1 
-        if key == "third_time_verified": 
-            msg = script.THIRD_VERIFY_COMPLETE_TEXT
-        else:
-            msg = script.SECOND_VERIFY_COMPLETE_TEXT if key == "second_time_verified" else script.VERIFY_COMPLETE_TEXT
-        if message.command[1].startswith('sendall'):
-            verifiedfiles = f"https://telegram.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}"
-        else:
-            verifiedfiles = f"https://telegram.me/{temp.U_NAME}?start=file_{grp_id}_{file_id}"
-        await client.send_message(settings['log'], script.VERIFIED_LOG_TEXT.format(m.from_user.mention, user_id, datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%d %B %Y'), num))
-        btn = [[InlineKeyboardButton("✅ ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ɢᴇᴛ ꜰɪʟᴇ ✅", url=verifiedfiles)]]
-        reply_markup=InlineKeyboardMarkup(btn)
-        dlt=await m.reply_photo(
-            photo=(VERIFY_IMG),
-            caption=msg.format(message.from_user.mention, get_readable_time(TWO_VERIFY_GAP)),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
-        await asyncio.sleep(300)
-        await dlt.delete()
-        return
-    if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
-        if not await db.get_chat(message.chat.id):
-            await db.add_chat(message.chat.id, message.chat.title)
-            total=await client.get_chat_members_count(message.chat.id)
-            await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))
-        status = get_status()
-        tb = await message.reply_text(f"<b>🔥 ʏᴇs {status},\nʜᴏᴡ ᴄᴀɴ ɪ ʜᴇʟᴘ ʏᴏᴜ??</b>")
-        await asyncio.sleep(600)
-        await tb.delete()
-        await m.delete()
-        return 
-    if not await db.is_user_exist(message.from_user.id):
-        await db.add_user(message.from_user.id, message.from_user.first_name)
-        await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
-    if len(message.command) != 2:
-        buttons = [[
-                    InlineKeyboardButton('ᴀʙᴏᴜᴛ 📜', callback_data='about'),
-                    InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info")
-                ],[
-                    InlineKeyboardButton('🌸 ᴀɴɪᴍᴇ ɢᴜɪᴅᴇ 🌸', user_id=int(OWNER))
-                ]]
-        reply_markup = InlineKeyboardMarkup(buttons)
-        m=await message.reply_sticker("CAACAgUAAxkBAAI47WjK1V24t_kyUL-ywJQQdxtaWnaeAAIMFgACpzEZVdpZS0jMvfn5HgQ")
-        await asyncio.sleep(2)
-        await m.delete()        
-        await message.reply_photo(
-            photo=random.choice(PICS),
-            caption=script.START_TXT.format(message.from_user.mention, get_status(), temp.U_NAME, temp.B_NAME),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )
-        return
-    if message.command[1].startswith("reff_"):
-        try:
-            user_id = int(message.command[1].split("_")[1])
-        except ValueError:
-            await message.reply_text("Invalid refer!")
+    try:
+        if EMOJI_MODE:
+            try:
+                await message.react(emoji=random.choice(REACTIONS), big=True)
+            except Exception:
+                await message.react(emoji="⚡️")
+                pass
+        m = message
+        if len(m.command) == 2 and m.command[1].startswith(('notcopy', 'sendall')):
+            _, userid, verify_id, file_id = m.command[1].split("_", 3)
+            user_id = int(userid)
+            grp_id = temp.VERIFICATIONS.get(user_id, 0)
+            settings = await get_settings(grp_id)
+            verify_id_info = await db.get_verify_id_info(user_id, verify_id)
+            if not verify_id_info or verify_id_info["verified"]:
+                return await message.reply("<b>ʟɪɴᴋ ᴇxᴘɪʀᴇᴅ ᴛʀʏ ᴀɢᴀɪɴ...</b>")
+            ist_timezone = pytz.timezone('Asia/Kolkata')
+            if await db.user_verified(user_id):
+                key = "third_time_verified"
+            else:
+                key = "second_time_verified" if await db.is_user_verified(user_id) else "last_verified"
+            current_time = datetime.now(tz=ist_timezone)
+            result = await db.update_notcopy_user(user_id, {key:current_time})
+            await db.update_verify_id_info(user_id, verify_id, {"verified":True})
+            if key == "third_time_verified": 
+                num = 3 
+            else: 
+                num =  2 if key == "second_time_verified" else 1 
+            if key == "third_time_verified": 
+                msg = script.THIRD_VERIFY_COMPLETE_TEXT
+            else:
+                msg = script.SECOND_VERIFY_COMPLETE_TEXT if key == "second_time_verified" else script.VERIFY_COMPLETE_TEXT
+            if message.command[1].startswith('sendall'):
+                verifiedfiles = f"https://telegram.me/{temp.U_NAME}?start=allfiles_{grp_id}_{file_id}"
+            else:
+                verifiedfiles = f"https://telegram.me/{temp.U_NAME}?start=file_{grp_id}_{file_id}"
+            await client.send_message(settings['log'], script.VERIFIED_LOG_TEXT.format(m.from_user.mention, user_id, datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%d %B %Y'), num))
+            btn = [[InlineKeyboardButton("✅ ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ɢᴇᴛ ꜰɪʟᴇ ✅", url=verifiedfiles)]]
+            reply_markup=InlineKeyboardMarkup(btn)
+            dlt=await m.reply_photo(
+                photo=(VERIFY_IMG),
+                caption=msg.format(message.from_user.mention, get_readable_time(TWO_VERIFY_GAP)),
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML
+            )
+            await asyncio.sleep(300)
+            await dlt.delete()
             return
-        if user_id == message.from_user.id:
-            await message.reply_text("ʜᴇʏ ᴅᴜᴅᴇ, ʏᴏᴜ ᴄᴀɴ'ᴛ ʀᴇꜰᴇʀ ʏᴏᴜʀsᴇʟꜰ 🤣!\n\nsʜᴀʀᴇ ʟɪɴᴋ ʏᴏᴜʀ ꜰʀɪᴇɴᴅ ᴀɴᴅ ɢᴇᴛ 𝟙𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛ. ɪꜰ ʏᴏᴜ ᴄᴏʟʟᴇᴄᴛ 𝟙𝟘𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛs, ᴛʜᴇɴ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ 𝟙 ᴍᴏɴᴛʜ ꜰʀᴇᴇ ᴘʀᴇᴍɪᴜᴍ ᴍᴇᴍʙᴇʀsʜɪᴘ.")
+        if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+            if not await db.get_chat(message.chat.id):
+                await db.add_chat(message.chat.id, message.chat.title)
+                total=await client.get_chat_members_count(message.chat.id)
+                await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))
+            status = get_status()
+            tb = await message.reply_text(f"<b>🔥 ʏᴇs {status},\nʜᴏᴡ ᴄᴀɴ ɪ ʜᴇʟᴘ ʏᴏᴜ??</b>")
+            await asyncio.sleep(600)
+            await tb.delete()
+            await m.delete()
             return
-        if referdb.is_user_in_list(message.from_user.id):
-            await message.reply_text("ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴀʟʀᴇᴀᴅʏ ɪɴᴠɪᴛᴇᴅ ❗")
+        if not await db.is_user_exist(message.from_user.id):
+            await db.add_user(message.from_user.id, message.from_user.first_name)
+            await client.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(message.from_user.id, message.from_user.mention))
+        if len(message.command) != 2:
+            buttons = [[
+                        InlineKeyboardButton('ᴀʙᴏᴜᴛ 📜', callback_data='about'),
+                        InlineKeyboardButton('ᴜᴘɢʀᴀᴅᴇ 🎟', callback_data="premium_info")
+                   ],[
+                        InlineKeyboardButton('🌸 ᴀɴɪᴍᴇ ɢᴜɪᴅᴇ 🌸', user_id=int(OWNER))
+                    ]]
+            reply_markup = InlineKeyboardMarkup(buttons)
+            m=await message.reply_sticker("CAACAgUAAxkBAAI47WjK1V24t_kyUL-ywJQQdxtaWnaeAAIMFgACpzEZVdpZS0jMvfn5HgQ")
+            await asyncio.sleep(2)
+            await m.delete()        
+            await message.reply_photo(
+                photo=random.choice(PICS),
+                caption=script.START_TXT.format(message.from_user.mention, get_status(), temp.U_NAME, temp.B_NAME),
+                reply_markup=reply_markup,
+                parse_mode=enums.ParseMode.HTML
+            )
             return
-        if await db.is_user_exist(message.from_user.id): 
-            await message.reply_text("‼️ ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴀʟʀᴇᴀᴅʏ ɪɴᴠɪᴛᴇᴅ ᴏʀ ᴊᴏɪɴᴇᴅ.")
-            return 
-        try:
-            uss = await client.get_users(user_id)
-        except Exception:
-            return 	    
-        referdb.add_user(message.from_user.id)
-        fromuse = referdb.get_refer_points(user_id) + 10
-        if fromuse == 100:
-            referdb.add_refer_points(user_id, 0) 
-            await message.reply_text(f"🎉 𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞ {uss.mention}!")		    
-            await message.reply_text(user_id, f"You have been successfully invited by {message.from_user.mention}!") 	
-            seconds = 2592000
-            if seconds > 0:
-                expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
-                user_data = {"id": user_id, "expiry_time": expiry_time}  # Using "id" instead of "user_id"  
-                await db.update_user(user_data)  # Use the update_user method to update or insert user data		    
-                await client.send_message(
-                chat_id=user_id,
-                text=f"<b>ʜʏ {uss.mention}\n\nʏᴏᴜ ɢᴏᴛ 𝟷 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 𝟷𝟶 ᴜsᴇʀs ❗", disable_web_page_preview=True              
-                )
-            for admin in ADMINS:
-                await client.send_message(chat_id=admin, text=f"sᴜᴄᴄᴇssꜰᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ:\n\nᴜsᴇʀ: {uss.mention}\n\nɪᴅ: {uss.id}!")	
-        else:
-            referdb.add_refer_points(user_id, fromuse)
-            await message.reply_text(f"You have been successfully invited by {uss.mention}!")
-            await client.send_message(user_id, f"𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞{message.from_user.mention}!")
-        return
+        if message.command[1].startswith("reff_"):
+            try:
+                user_id = int(message.command[1].split("_")[1])
+            except ValueError:
+                await message.reply_text("Invalid refer!")
+                return
+            if user_id == message.from_user.id:
+                await message.reply_text("ʜᴇʏ ᴅᴜᴅᴇ, ʏᴏᴜ ᴄᴀɴ'ᴛ ʀᴇꜰᴇʀ ʏᴏᴜʀsᴇʟꜰ 🤣!\n\nsʜᴀʀᴇ ʟɪɴᴋ ʏᴏᴜʀ ꜰʀɪᴇɴᴅ ᴀɴᴅ ɢᴇᴛ 𝟙𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛ. ɪꜰ ʏᴏᴜ ᴄᴏʟʟᴇᴄᴛ 𝟙𝟘𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛs, ᴛʜᴇɴ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ 𝟙 ᴍᴏɴᴛʜ ꜰʀᴇᴇ ᴘʀᴇᴍɪᴜᴍ ᴍᴇᴍʙᴇʀsʜɪᴘ.")
+                return
+            if referdb.is_user_in_list(message.from_user.id):
+                await message.reply_text("ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴀʟʀᴇᴀᴅʏ ɪɴᴠɪᴛᴇᴅ ❗")
+                return
+            if await db.is_user_exist(message.from_user.id): 
+                await message.reply_text("‼️ ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴀʟʀᴇᴀᴅʏ ɪɴᴠɪᴛᴇᴅ ᴏʀ ᴊᴏɪɴᴇᴅ.")
+                return 
+            try:
+                uss = await client.get_users(user_id)
+            except Exception:
+                return 	    
+            referdb.add_user(message.from_user.id)
+            fromuse = referdb.get_refer_points(user_id) + 10
+            if fromuse == 100:
+                referdb.add_refer_points(user_id, 0) 
+                await message.reply_text(f"🎉 𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞ {uss.mention}!")		    
+                await message.reply_text(user_id, f"You have been successfully invited by {message.from_user.mention}!") 	
+                seconds = 2592000
+                if seconds > 0:
+                    expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
+                    user_data = {"id": user_id, "expiry_time": expiry_time}  # Using "id" instead of "user_id"  
+                    await db.update_user(user_data)  # Use the update_user method to update or insert user data		    
+                    await client.send_message(
+                    chat_id=user_id,
+                    text=f"<b>ʜʏ {uss.mention}\n\nʏᴏᴜ ɢᴏᴛ 𝟷 ᴍᴏɴᴛʜ ᴘʀᴇᴍɪᴜᴍ sᴜʙsᴄʀɪᴘᴛɪᴏɴ ʙʏ ɪɴᴠɪᴛɪɴɢ 𝟷𝟶 ᴜsᴇʀs ❗", disable_web_page_preview=True              
+                    )
+                for admin in ADMINS:
+                    await client.send_message(chat_id=admin, text=f"sᴜᴄᴄᴇssꜰᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ:\n\nᴜsᴇʀ: {uss.mention}\n\nɪᴅ: {uss.id}!")	
+            else:
+                referdb.add_refer_points(user_id, fromuse)
+                await message.reply_text(f"You have been successfully invited by {uss.mention}!")
+                await client.send_message(user_id, f"𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞{message.from_user.mention}!")
+            return
 
     if len(message.command) == 2 and message.command[1].startswith('getfile'):
         movies = message.command[1].split("-", 1)[1] 
