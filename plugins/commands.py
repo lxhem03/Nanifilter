@@ -150,135 +150,135 @@ async def start(client, message):
                 await client.send_message(user_id, f"𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞{message.from_user.mention}!")
             return
 
-    if len(message.command) == 2 and message.command[1].startswith('getfile'):
-        movies = message.command[1].split("-", 1)[1] 
-        movie = movies.replace('-',' ')
-        message.text = movie 
-        await auto_filter(client, message) 
-        return
-    data = message.command[1]
-    try:
-        _, grp_id, file_id = data.split("_", 2)
-        grp_id = int(grp_id)
-    except:
-        grp_id = 0
-        file_id = data
-    file_details_task = asyncio.create_task(get_file_details(file_id))
-    if not await db.has_premium_access(message.from_user.id): 
+        if len(message.command) == 2 and message.command[1].startswith('getfile'):
+            movies = message.command[1].split("-", 1)[1] 
+            movie = movies.replace('-',' ')
+            message.text = movie 
+            await auto_filter(client, message)
+            raise StopPropagation
+        data = message.command[1]
         try:
-            btn = []
-            chat = grp_id
-            settings      = await get_settings(chat)
-            fsub_channels = list(dict.fromkeys((settings.get('fsub', []) if settings else [])+ AUTH_CHANNELS))
-            if fsub_channels:
-                btn += await is_subscribed(client, message.from_user.id, fsub_channels)
-            if AUTH_REQ_CHANNELS:
-                btn += await is_req_subscribed(client, message.from_user.id, AUTH_REQ_CHANNELS)
-            if btn:
-                if len(message.command) > 1 and "_" in message.command[1]:
-                    kk, file_id = message.command[1].split("_", 1)
-                    btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", callback_data=f"checksub#{kk}#{file_id}")])
-                    reply_markup = InlineKeyboardMarkup(btn)
-                await message.reply_photo(
-                    photo=random.choice(PICS),
-                    caption=(f"{message.from_user.mention}\n\n🛑 ʏᴏᴜ ᴍᴜsᴛ ᴊᴏɪɴ ᴛʜᴇ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.\n👉 ᴊᴏɪɴ ᴀʟʟ ᴛʜᴇ ʙᴇʟᴏᴡ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ."),
-                    reply_markup=reply_markup,
-                    parse_mode=enums.ParseMode.HTML
-                )
-                return
-        except Exception as e:
-            await log_error(client, f"❗️ Force Sub Error:\n\n{repr(e)}")
-            logger.error(f"❗️ Force Sub Error:\n\n{repr(e)}")
-
-    user_id = m.from_user.id
-    if not await db.has_premium_access(user_id):
-        try:
+            _, grp_id, file_id = data.split("_", 2)
             grp_id = int(grp_id)
-            user_verified = await db.is_user_verified(user_id)
-            settings = await get_settings(grp_id)
-            is_second_shortener = await db.use_second_shortener(user_id, settings.get('verify_time', TWO_VERIFY_GAP)) 
-            is_third_shortener = await db.use_third_shortener(user_id, settings.get('third_verify_time', THREE_VERIFY_GAP))
-            if settings.get("is_verify", IS_VERIFY) and (not user_verified or is_second_shortener or is_third_shortener):
-                verify_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
-                await db.create_verify_id(user_id, verify_id)
-                temp.VERIFICATIONS[user_id] = grp_id
-                if message.command[1].startswith('allfiles'):
-                    verify = await get_shortlink(f"https://telegram.me/{temp.U_NAME}?start=sendall_{user_id}_{verify_id}_{file_id}", grp_id, is_second_shortener, is_third_shortener)
-                else:
-                    verify = await get_shortlink(f"https://telegram.me/{temp.U_NAME}?start=notcopy_{user_id}_{verify_id}_{file_id}", grp_id, is_second_shortener, is_third_shortener)
-                if is_third_shortener:
-                    howtodownload = settings.get('tutorial_3', TUTORIAL_3)
-                else:
-                    howtodownload = settings.get('tutorial_2', TUTORIAL_2) if is_second_shortener else settings.get('tutorial', TUTORIAL)
-                buttons = [[
-                    InlineKeyboardButton(text="♻️ ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ᴠᴇʀɪꜰʏ ♻️", url=verify)
-                ],[
-                    InlineKeyboardButton(text="⁉️ ʜᴏᴡ ᴛᴏ ᴠᴇʀɪꜰʏ ⁉️", url=howtodownload)
-                ]]
-                reply_markup=InlineKeyboardMarkup(buttons)
-                if await db.user_verified(user_id): 
-                    msg = script.THIRD_VERIFICATION_TEXT
-                else:            
-                    msg = script.SECOND_VERIFICATION_TEXT if is_second_shortener else script.VERIFICATION_TEXT
-                n=await m.reply_text(
-                    text=msg.format(message.from_user.mention),
-                    protect_content = True,
-                    reply_markup=reply_markup,
-                    parse_mode=enums.ParseMode.HTML
-                )
-                await asyncio.sleep(300) 
-                await n.delete()
-                await m.delete()
-                return
-        except Exception as e:
-            print(f"Error In Verification - {e}")
-            pass
+        except:
+            grp_id = 0
+            file_id = data
+        file_details_task = asyncio.create_task(get_file_details(file_id))
+        if not await db.has_premium_access(message.from_user.id): 
+            try:
+                btn = []
+                chat = grp_id
+                settings = await get_settings(chat)
+                fsub_channels = list(dict.fromkeys((settings.get('fsub', []) if settings else [])+ AUTH_CHANNELS))
+                if fsub_channels:
+                    btn += await is_subscribed(client, message.from_user.id, fsub_channels)
+                if AUTH_REQ_CHANNELS:
+                    btn += await is_req_subscribed(client, message.from_user.id, AUTH_REQ_CHANNELS)
+                if btn:
+                    if len(message.command) > 1 and "_" in message.command[1]:
+                        kk, file_id = message.command[1].split("_", 1)
+                        btn.append([InlineKeyboardButton("♻️ ᴛʀʏ ᴀɢᴀɪɴ ♻️", callback_data=f"checksub#{kk}#{file_id}")])
+                        reply_markup = InlineKeyboardMarkup(btn)
+                    await message.reply_photo(
+                        photo=random.choice(PICS),
+                        caption=(f"{message.from_user.mention}\n\n🛑 ʏᴏᴜ ᴍᴜsᴛ ᴊᴏɪɴ ᴛʜᴇ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.\n👉 ᴊᴏɪɴ ᴀʟʟ ᴛʜᴇ ʙᴇʟᴏᴡ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ."),
+                        reply_markup=reply_markup,
+                        parse_mode=enums.ParseMode.HTML
+                    )
+                    return
+            except Exception as e:
+                await log_error(client, f"❗️ Force Sub Error:\n\n{repr(e)}")
+                logger.error(f"❗️ Force Sub Error:\n\n{repr(e)}")
 
-    files_ = await file_details_task
-    if data.startswith("allfiles"):
-        try:
-            files = temp.GETALL.get(file_id)
-            if not files:
-                return await message.reply('<b><i>ɴᴏ ꜱᴜᴄʜ ꜰɪʟᴇ ᴇxɪꜱᴛꜱ !</b></i>')
-            filesarr = []
-            cover = None
-            for file in files:
-                file_id = file.file_id
-                files_ = await get_file_details(file_id)
-                files1 = files_[0]
-                title = clean_filename(files1.file_name)
-                cover = files1.cover
-                size = get_size(files1.file_size)
-                f_caption = files1.caption
-                settings = await get_settings(int(grp_id))
-                CAPTION = settings.get('caption', FILE_CAPTION)
-                if CAPTION:
-                    try:
-                        f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
-                    except Exception as e:
-                        logger.exception(e)
-                        f_caption = f_caption
-                if f_caption is None:
-                    f_caption = f"{clean_filename(files1.file_name)}"
-                btn = await stream_buttons(message.from_user.id, file_id)
-                msg = await client.send_cached_media(
-                    chat_id=message.from_user.id,
-                    cover=cover,
-                    file_id=file_id,
-                    caption=f_caption,
-                    protect_content=settings.get('file_secure', PROTECT_CONTENT),
-                    reply_markup=InlineKeyboardMarkup(btn)
-                )
-                filesarr.append(msg)
-            k = await client.send_message(chat_id=message.from_user.id, text=f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>")
-            await asyncio.sleep(DELETE_TIME)
-            for x in filesarr:
-                await x.delete()
-            await k.edit_text("<b>ʏᴏᴜʀ ᴀʟʟ ᴠɪᴅᴇᴏꜱ/ꜰɪʟᴇꜱ ᴀʀᴇ ᴅᴇʟᴇᴛᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ !\nᴋɪɴᴅʟʏ ꜱᴇᴀʀᴄʜ ᴀɢᴀɪɴ</b>")
-            return
-        except Exception as e:
-            logger.exception(e)
-            return
+        user_id = m.from_user.id
+        if not await db.has_premium_access(user_id):
+            try:
+                grp_id = int(grp_id)
+                user_verified = await db.is_user_verified(user_id)
+                settings = await get_settings(grp_id)
+                is_second_shortener = await db.use_second_shortener(user_id, settings.get('verify_time', TWO_VERIFY_GAP)) 
+                is_third_shortener = await db.use_third_shortener(user_id, settings.get('third_verify_time', THREE_VERIFY_GAP))
+                if settings.get("is_verify", IS_VERIFY) and (not user_verified or is_second_shortener or is_third_shortener):
+                    verify_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=7))
+                    await db.create_verify_id(user_id, verify_id)
+                    temp.VERIFICATIONS[user_id] = grp_id
+                    if message.command[1].startswith('allfiles'):
+                        verify = await get_shortlink(f"https://telegram.me/{temp.U_NAME}?start=sendall_{user_id}_{verify_id}_{file_id}", grp_id, is_second_shortener, is_third_shortener)
+                    else:
+                        verify = await get_shortlink(f"https://telegram.me/{temp.U_NAME}?start=notcopy_{user_id}_{verify_id}_{file_id}", grp_id, is_second_shortener, is_third_shortener)
+                    if is_third_shortener:
+                        howtodownload = settings.get('tutorial_3', TUTORIAL_3)
+                    else:
+                        howtodownload = settings.get('tutorial_2', TUTORIAL_2) if is_second_shortener else settings.get('tutorial', TUTORIAL)
+                    buttons = [[
+                        InlineKeyboardButton(text="♻️ ᴄʟɪᴄᴋ ʜᴇʀᴇ ᴛᴏ ᴠᴇʀɪꜰʏ ♻️", url=verify)
+                    ],[
+                        InlineKeyboardButton(text="⁉️ ʜᴏᴡ ᴛᴏ ᴠᴇʀɪꜰʏ ⁉️", url=howtodownload)
+                    ]]
+                    reply_markup=InlineKeyboardMarkup(buttons)
+                    if await db.user_verified(user_id): 
+                        msg = script.THIRD_VERIFICATION_TEXT
+                    else:            
+                        msg = script.SECOND_VERIFICATION_TEXT if is_second_shortener else script.VERIFICATION_TEXT
+                    n=await m.reply_text(
+                        text=msg.format(message.from_user.mention),
+                        protect_content = True,
+                        reply_markup=reply_markup,
+                        parse_mode=enums.ParseMode.HTML
+                    )
+                    await asyncio.sleep(300) 
+                    await n.delete()
+                    await m.delete()
+                    return
+            except Exception as e:
+                print(f"Error In Verification - {e}")
+                pass
+
+        files_ = await file_details_task
+        if data.startswith("allfiles"):
+            try:
+                files = temp.GETALL.get(file_id)
+                if not files:
+                    return await message.reply('<b><i>ɴᴏ ꜱᴜᴄʜ ꜰɪʟᴇ ᴇxɪꜱᴛꜱ !</b></i>')
+                filesarr = []
+                cover = None
+                for file in files:
+                    file_id = file.file_id
+                    files_ = await get_file_details(file_id)
+                    files1 = files_[0]
+                    title = clean_filename(files1.file_name)
+                    cover = files1.cover
+                    size = get_size(files1.file_size)
+                    f_caption = files1.caption
+                    settings = await get_settings(int(grp_id))
+                    CAPTION = settings.get('caption', FILE_CAPTION)
+                    if CAPTION:
+                        try:
+                            f_caption=CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
+                        except Exception as e:
+                            logger.exception(e)
+                            f_caption = f_caption
+                    if f_caption is None:
+                        f_caption = f"{clean_filename(files1.file_name)}"
+                    btn = await stream_buttons(message.from_user.id, file_id)
+                    msg = await client.send_cached_media(
+                        chat_id=message.from_user.id,
+                        cover=cover,
+                        file_id=file_id,
+                        caption=f_caption,
+                        protect_content=settings.get('file_secure', PROTECT_CONTENT),
+                        reply_markup=InlineKeyboardMarkup(btn)
+                    )
+                    filesarr.append(msg)
+                k = await client.send_message(chat_id=message.from_user.id, text=f"<i>⚠️ ᴛʜɪꜱ ꜰɪʟᴇ/ᴠɪᴅᴇᴏ ᴡɪʟʟ ʙᴇ ᴅᴇʟᴇᴛᴇᴅ ɪɴ {get_time(DELETE_TIME)} 🫥 (ᴅᴜᴇ ᴛᴏ ᴄᴏᴘʏʀɪɢʜᴛ ɪꜱꜱᴜᴇꜱ).</i>\n\n<blockquote><b>ᴘʟᴇᴀꜱᴇ ꜰᴏʀᴡᴀʀᴅ ᴛʜɪꜱ ꜰɪʟᴇ ᴛᴏ ꜱᴏᴍᴇᴡʜᴇʀᴇ ᴇʟꜱᴇ ᴀɴᴅ ꜱᴛᴀʀᴛ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴇʀᴇ.</b></blockquote>")
+                await asyncio.sleep(DELETE_TIME)
+                for x in filesarr:
+                    await x.delete()
+                await k.edit_text("<b>ʏᴏᴜʀ ᴀʟʟ ᴠɪᴅᴇᴏꜱ/ꜰɪʟᴇꜱ ᴀʀᴇ ᴅᴇʟᴇᴛᴇᴅ ꜱᴜᴄᴄᴇꜱꜱꜰᴜʟʟʏ !\nᴋɪɴᴅʟʏ ꜱᴇᴀʀᴄʜ ᴀɢᴀɪɴ</b>")
+                return
+            except Exception as e:
+                logger.exception(e)
+                return
 
     user = message.from_user.id
     is_premium = await db.has_premium_access(user)
