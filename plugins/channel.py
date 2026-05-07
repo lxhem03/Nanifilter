@@ -6,9 +6,9 @@ from collections import defaultdict
 from .poster import get_movie_detailsx, fetch_image, get_movie_details
 from database.users_chats_db import db
 from pyrogram import Client, filters, enums
-from info import CHANNELS, UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, GROUP_LINK, TMDB_POSTER
+from info import CHANNELS, UPDATE_CHANNEL, LINK_PREVIEW, ABOVE_PREVIEW, BAD_WORDS, LANDSCAPE_POSTER, TMDB_POSTER
 from Script import script
-from database.ia_filterdb import save_file, unpack_new_file_id
+from database.ia_filterdb import save_file
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from utils import temp
 from pymongo.errors import PyMongoError, DuplicateKeyError
@@ -16,7 +16,6 @@ from pyrogram.errors import MessageIdInvalid, MessageNotModified, FloodWait
 from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
-
 
 IGNORE_WORDS = {
     "rarbg", "dub", "sub", "sample", "mkv", "aac", "combined",
@@ -32,7 +31,7 @@ IGNORE_WORDS = {
     "mar", "marathi", "guj", "gujarati", "urd", "urdu", "kor", "korean", "jpn",
     "japanese", "nf", "netflix", "sonyliv", "sony", "sliv", "amzn", "prime",
     "primevideo", "hotstar", "zee5", "jio", "jhs", "aha", "hbo", "paramount",
-    "apple", "hoichoi", "sunnxt", "viki", "•", "&nbsp;"
+    "apple", "hoichoi", "sunnxt", "viki"
 }|BAD_WORDS
 
 CAPTION_LANGUAGES = {
@@ -72,7 +71,7 @@ NORMALIZE_PATTERN = re.compile(r"[._]+|[()\[\]{}:;'–!,.?_]")
 QUALITY_PATTERN = re.compile(
     r"\b(?:HDCam|HDTC|CamRip|TS|TC|TeleSync|DVDScr|DVDRip|PreDVD|"
     r"WEBRip|WEB-DL|TVRip|HDTV|WEB DL|WebDl|BluRay|BRRip|BDRip|"
-    r"360p|480p|720p|1080p|2160p|4K|1440p|540p|240p|144p|HEVC|HDRip)\b",
+    r"360p|480p|720p|1080p|2160p|4K|1440p|540p|240p|140p|HEVC|HDRip)\b",
     re.IGNORECASE
 )
 YEAR_PATTERN = re.compile(r"(?<![A-Za-z0-9])(?:19|20)\d{2}(?![A-Za-z0-9])")
@@ -123,35 +122,26 @@ def schedule_update(bot, base_name, delay=5):
     if handle := pending_updates.get(base_name):
         if not handle.cancelled():
             handle.cancel()
-
     loop = asyncio.get_event_loop()
     pending_updates[base_name] = loop.call_later(
         delay,
         lambda: asyncio.create_task(update_movie_message(bot, base_name))
     )
 
-def get_file_size_mb(file_size_bytes):
-    if not file_size_bytes or file_size_bytes == 0:
-        return "N/A"
-
-    size_mb = file_size_bytes / (1024 * 1024)
-    if size_mb >= 1024:
-        size_gb = size_mb / 1024
-        return f"{size_gb:.2f} GB"
-    else:
-        return f"{size_mb:.2f} MB"
-
 def extract_media_info(filename: str, caption: str):
     filename = normalize(clean_mentions_links(filename).title())
     caption_clean = clean_mentions_links(caption).lower() if caption else ""
     unified = f"{caption_clean} {filename.lower()}".strip()
+
     season = episode = year = None
     tag = "#MOVIE"
     processed_raw = base_raw = filename
     quality = get_qualities(caption_clean) or get_qualities(filename.lower()) or "N/A"
     ott_platform = extract_ott_platform(f"{filename} {caption_clean}")
+
     lang_keys = {k for k in CAPTION_LANGUAGES if k in caption_clean or k in filename.lower()}
     language = ", ".join(sorted({CAPTION_LANGUAGES[k] for k in lang_keys})) if lang_keys else "N/A"
+
     season, episode = extract_season_episode(filename)
     if season is not None:
         tag = "#SERIES"
@@ -181,21 +171,27 @@ def extract_media_info(filename: str, caption: str):
                 if qual_idx != -1:
                     processed_raw = filename[:qual_idx]
                     base_raw = processed_raw
+
     base_name = normalize(remove_ignored_words(normalize(base_raw)))
     if year and year not in base_name:
         base_name += f" {year}"
+
     if base_name.endswith(")"):
         base_name = re.sub(r"\s+\(\d{4}\)$", "", base_name)
         if year:
             base_name += f" {year}"
+
+
     def _strip_season_episode_tokens(name: str) -> str:
         if not name:
             return name
+
         year_match = re.search(r'\(?\b(19|20)\d{2}\b\)?\s*$', name)
         year_part = ""
         if year_match:
             year_part = year_match.group(0)
             name = name[:year_match.start()].strip()
+
         patterns = [
             r'\bS\d{1,2}E\d{1,2}\b',
             r'\bS\d{1,2}\b',
@@ -216,6 +212,7 @@ def extract_media_info(filename: str, caption: str):
             if y:
                 name = f"{name} {y.group(0)}"
         return name.strip()
+
     base_name = _strip_season_episode_tokens(base_name)
     if not base_name:
         base_name = normalize(remove_ignored_words(normalize(processed_raw))) or filename
@@ -247,35 +244,33 @@ async def media_handler(bot, message):
     success, info = await save_file(media)
     if not success:
         return
+
     try:
         if await db.movie_update_status(bot.me.id):
-            await process_and_send_update(bot, media.file_name, media.caption, media)
+            await process_and_send_update(bot, media.file_name, media.caption)
     except Exception:
         logger.exception("Error processing media")
 
-async def process_and_send_update(bot, filename, caption, media):
+async def process_and_send_update(bot, filename, caption):
     try:
         media_info = extract_media_info(filename, caption)
         base_name = media_info["base_name"]
         processed = media_info["processed"]
+
         lock = locks[base_name]
         async with lock:
-            await _process_with_lock(bot, filename, caption, media_info, base_name, processed, media)
+            await _process_with_lock(bot, filename, caption, media_info, base_name, processed)
     except PyMongoError as e:
         logger.error(f"Database error in process_and_send_update: {e}")
     except Exception as e:
         logger.exception(f"Processing failed in process_and_send_update: {e}")
 
-async def _process_with_lock(bot, filename, caption, media_info, base_name, processed, media):
+async def _process_with_lock(bot, filename, caption, media_info, base_name, processed):
     if not hasattr(db, 'movie_updates'):
         db.movie_updates = db.db.movie_updates
+
     movie_doc = await db.movie_updates.find_one({"_id": base_name})
     error_tmdb=False
-    try:
-        file_id, _ = unpack_new_file_id(media.file_id)
-    except Exception:
-        file_id = 'unknown_id'
-    file_size = media.file_size if hasattr(media, 'file_size') else 0
     file_data = {
         "filename": filename,
         "processed": processed,
@@ -285,10 +280,9 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
         "timestamp": datetime.now(),
         "tag": media_info["tag"],
         "season": media_info["season"],
-        "episode": media_info["episode"],
-        "file_id": file_id,
-        "file_size": file_size
+        "episode": media_info["episode"]
     }
+
     if not movie_doc:
         if TMDB_POSTER:
             details = await get_movie_detailsx(base_name)
@@ -298,6 +292,7 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
                 details = await get_movie_details(base_name) or {}
         else:
             details = await get_movie_details(base_name) or {}
+
         raw_genres = details.get("genres", "N/A")
         if isinstance(raw_genres, str):
             genre_list = [g.strip() for g in raw_genres.split(",")]
@@ -311,7 +306,7 @@ async def _process_with_lock(bot, filename, caption, media_info, base_name, proc
             "genres": genres,
             "rating": details.get("rating", "N/A"),
             "imdb_url": details.get("url", "")if not TMDB_POSTER or error_tmdb else details.get("tmdb_url"),
-            "year": media_info["year"] or details.get("year"),
+            "year": details.get("year") or media_info["year"],
             "tag": media_info["tag"],
             "ott_platform": media_info["ott_platform"],
             "message_id": None,
@@ -352,42 +347,41 @@ async def send_movie_update(bot, base_name):
             movie_doc = await db.movie_updates.find_one({"_id": base_name})
             if not movie_doc:
                 return None
-            text, buttons = generate_movie_message(movie_doc, base_name)
-            msg = None
-            is_photo = False
+
+            text = generate_movie_message(movie_doc, base_name)
+            buttons = InlineKeyboardMarkup([[
+                InlineKeyboardButton(
+                    'ɢᴇᴛ ғɪʟᴇs',
+                    url=f"https://telegram.me/{temp.U_NAME}?start=getfile-{base_name.replace(' ', '-')}"
+                )
+            ]])
             size=(2560, 1440) if LANDSCAPE_POSTER and TMDB_POSTER and movie_doc.get("is_backdrop") and not movie_doc.get("error_tmdb") else (853, 1280)
             if movie_doc.get("poster_url") and not LINK_PREVIEW:
                 resized_poster = await fetch_image(movie_doc["poster_url"], size)
-                if resized_poster:
-                    try:
-                        msg = await bot.send_photo(
-                            chat_id=UPDATE_CHANNEL,
-                            photo=resized_poster,
-                            caption=text,
-                            reply_markup=buttons,
-                            parse_mode=enums.ParseMode.HTML
-                        )
-                        is_photo = True
-                    except Exception as e:
-                        logger.warning(f"Could not send photo, falling back to text message. Error: {e}")
-                        msg = None
-            if not msg:
+                msg = await bot.send_photo(
+                    chat_id=UPDATE_CHANNEL,
+                    photo=resized_poster,
+                    caption=text,
+                    reply_markup=buttons,
+                    parse_mode=enums.ParseMode.HTML
+                )
+                is_photo = True
+            else:
                 send_params = {
                     "chat_id": UPDATE_CHANNEL,
                     "text": text,
                     "reply_markup": buttons,
-                    "parse_mode": enums.ParseMode.HTML,
-                    "disable_web_page_preview": not LINK_PREVIEW
+                    "parse_mode": enums.ParseMode.HTML
                 }
                 if movie_doc.get("poster_url") and LINK_PREVIEW:
                     send_params["invert_media"] = ABOVE_PREVIEW
                 msg = await bot.send_message(**send_params)
                 is_photo = False
-            if msg:
-                await db.movie_updates.update_one(
-                    {"_id": base_name},
-                    {"$set": {"message_id": msg.id, "is_photo": is_photo}}
-                )
+
+            await db.movie_updates.update_one(
+                {"_id": base_name},
+                {"$set": {"message_id": msg.id, "is_photo": is_photo}}
+            )
             return msg
         except FloodWait as e:
             wait_time = e.value + 2
@@ -402,12 +396,22 @@ async def update_movie_message(bot, base_name):
         movie_doc = await db.movie_updates.find_one({"_id": base_name})
         if not movie_doc:
             return
-        text, buttons = generate_movie_message(movie_doc, base_name)
+
+        text = generate_movie_message(movie_doc, base_name)
+        buttons = InlineKeyboardMarkup([[
+            InlineKeyboardButton(
+                'ɢᴇᴛ ғɪʟᴇs',
+                url=f"https://telegram.me/{temp.U_NAME}?start=getfile-{base_name.replace(' ', '-')}"
+            )
+        ]])
+
         message_id = movie_doc.get("message_id")
         is_photo = movie_doc.get("is_photo", False)
+
         if not message_id:
             await send_movie_update(bot, base_name)
             return
+
         try:
             if is_photo:
                 await bot.edit_message_caption(
@@ -449,107 +453,35 @@ async def update_movie_message(bot, base_name):
         logger.error(f"Failed to update movie message for {base_name}: {e}")
 
 def generate_movie_message(movie_doc, base_name):
-    def extract_resolutions_from_text(text: str):
-        if not text:
-            return []
-        matches = re.findall(r"\b(?:\d{3,4}p|4k)\b", text, flags=re.IGNORECASE)
-        normalized = []
-        for m in matches:
-            ml = m.lower()
-            if ml == "4k":
-                normalized.append("4K")
-            else:
-                normalized.append(ml)
-        seen = set()
-        unique = []
-        for q in normalized:
-            if q not in seen:
-                seen.add(q)
-                unique.append(q)
-        return unique
-    quality_files = {}
+    all_qualities = set()
     all_languages = set()
+    all_ott_platforms = set()
     all_tags = set()
     episodes_by_season = defaultdict(set)
+
     for file in movie_doc["files"]:
-        file_qualities = []
-        if file.get("quality") and file["quality"] != "N/A":
-            file_qualities = extract_resolutions_from_text(file["quality"]) or []
-        if not file_qualities:
-            file_qualities = extract_resolutions_from_text(file["filename"]) or []
-        if not file_qualities:
-            continue
-        for quality in file_qualities:
-            if quality not in quality_files:
-                quality_files[quality] = []
-            quality_files[quality].append({
-                'filename': file["filename"],
-                'file_id': file.get('file_id', 'unknown_id'),
-                'file_size': file.get('file_size', 0),
-                'language': file.get("language", "N/A"),
-                'ott_platform': file.get("ott_platform", "N/A")
-            })
-        if file.get("language") and file["language"] != "N/A":
+        if file["quality"] != "N/A":
+            all_qualities.update(q.strip() for q in file["quality"].split(",") if q.strip())
+        if file["language"] != "N/A":
             all_languages.update(l.strip() for l in file["language"].split(",") if l.strip())
-        if file.get("tag"):
+        if file["ott_platform"] != "N/A":
+            platforms = [p.strip() for p in file["ott_platform"].split("|") if p.strip()]
+            all_ott_platforms.update(platforms)
+        if file["tag"]:
             all_tags.add(file["tag"])
         if file.get("season") and file.get("episode"):
             season = file["season"]
             episode = file["episode"]
             episodes_by_season[season].add(episode)
+
     primary_tag = "#SERIES" if "#SERIES" in all_tags else "#MOVIE"
-    content_type = "SERIES" if "#SERIES" in all_tags else "MOVIE"
-    caption_lines = []
-    caption_lines.append("<blockquote>📫 𝖭𝖤𝖶 𝖥𝖨𝖫𝖤 𝖠𝖣𝖣𝖤𝖣 ✅</blockquote>")
-    caption_lines.append("")
-    caption_lines.append(f"🚧  Title : {base_name}")
-    language_str = ", ".join(sorted(all_languages)) if all_languages else "English"
-    caption_lines.append(f"🎧 𝖠𝗎𝖽𝗂𝗈 : {language_str}")
-    caption_lines.append(f"🔖 Type : {content_type}")
-    ott = movie_doc.get("ott_platform", "N/A")
-    if ott and ott != "N/A":
-        caption_lines.append(f"📺 𝖲𝗍𝗋𝖾𝖺𝗆𝗂𝗇𝗀 𝗈𝗇 : {ott}")
-    caption_lines.append("")
-    caption_lines.append("<blockquote>🚀 Telegram Files ✨</blockquote>")
-    caption_lines.append("")
-    grouped_by_label = {}
-    for quality, files_for_quality in quality_files.items():
-        for fi in files_for_quality:
-            is_hevc = False
-            fname_lower = fi['filename'].lower()
-            if 'hevc' in fname_lower:
-                is_hevc = True
-            base_label = quality.upper()
-            label = f"{base_label} HEVC" if is_hevc else base_label
-            if label not in grouped_by_label:
-                grouped_by_label[label] = []
-            grouped_by_label[label].append(fi)
-
-    def _sort_group_key(label: str):
-        ll = label.lower()
-        if '4k' in ll:
-            return -4000
-        m = re.search(r'(\d+)p', ll)
-        return -int(m.group(1)) if m else -1
-
-    for label in sorted(grouped_by_label.keys(), key=_sort_group_key):
-        files_for_label = grouped_by_label[label]
-        if not files_for_label:
-            continue
-        files_for_label.sort(key=lambda x: x.get('file_size', 0), reverse=True)
-        size_links = []
-        for file_info in files_for_label:
-            size_str = get_file_size_mb(file_info.get('file_size', 0))
-            link = f'<a href="https://telegram.me/{temp.U_NAME}?start=file_{UPDATE_CHANNEL}_{file_info["file_id"]}">{size_str}</a>'
-            size_links.append(link)
-        caption_lines.append(f"📦 {label} : {' | '.join(size_links)}")
-        caption_lines.append("")
-    
+    epi_block = ""
     if episodes_by_season:
-        caption_lines.append("📺 Episodes Available:")
+        episode_lines = []
         for season, episodes in sorted(episodes_by_season.items(), key=lambda x: int(x[0])):
             singles = []
             ranges = []
+
             for ep in episodes:
                 if "-" in ep:
                     ranges.append(ep)
@@ -558,6 +490,7 @@ def generate_movie_message(movie_doc, base_name):
                         singles.append(int(ep))
                     except ValueError:
                         ranges.append(ep)
+
             singles.sort()
             collapsed = []
             start = end = None
@@ -571,10 +504,40 @@ def generate_movie_message(movie_doc, base_name):
                     start = end = num
             if start is not None:
                 collapsed.append(str(start) if start == end else f"{start}-{end}")
+
             all_ep_parts = collapsed + sorted(ranges, key=lambda s: int(s.split("-")[0]))
-            caption_lines.append(f"Season {int(season)}: Episodes {', '.join(all_ep_parts)}")
-        caption_lines.append("")
-    caption_lines.append("<blockquote>〽️ Powered by @ComicArc</blockquote>")
-    text = "\n".join(caption_lines).rstrip("\n")
-    buttons = [[InlineKeyboardButton("🔍 ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ", url=GROUP_LINK)]]
-    return text, InlineKeyboardMarkup(buttons)
+            episode_lines.append(f"S{int(season)}: {', '.join(all_ep_parts)}")
+
+        epi_str = "\n".join(episode_lines)
+        if epi_str:
+            epi_block = f"📺 ᴇᴘɪsᴏᴅᴇs : <b>\n{epi_str}</b>"
+
+    genres = movie_doc.get("genres", "N/A")
+    quality_str = ", ".join(sorted(all_qualities)) if all_qualities else "N/A"
+    language_str = ", ".join(sorted(all_languages)) if all_languages else "N/A"
+    ott_str = ", ".join(sorted(all_ott_platforms)) if all_ott_platforms else "N/A"
+    rating=movie_doc.get("rating", "-")
+    try:
+        r = float(rating)
+    except (TypeError, ValueError):
+        r = 0.0
+
+    rating_text = "-" if r == 0.0 else str(rating)
+    year_val = str(movie_doc.get("year") or "")
+    filename_display = base_name
+    if year_val and filename_display.strip().endswith(year_val):
+        filename_display = filename_display.strip()[:-len(year_val)].strip()
+    return script.UPDATE_NOTIFY_TXT.format(
+        poster_url=movie_doc.get("poster_url", ""),
+        imdb_url=movie_doc.get("imdb_url", ""),
+        filename=filename_display,
+        tag=primary_tag,
+        year=year_val,
+        genres=genres,
+        ott=ott_str,
+        quality=quality_str,
+        language=language_str,
+        episodes=epi_block,
+        rating=rating_text,
+        search_link=temp.B_LINK
+        )
