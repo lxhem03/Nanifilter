@@ -136,6 +136,20 @@ class script(object):
 
 <b>🍁 ʙʏ : <a href="https://telegram.me/techifybots">[ ᴛᴇᴄʜɪꜰʏʙᴏᴛs ]</a></b>"""
 
+    UPDATE_NOTIFY_TXT = """</b><a href={poster_url}>📥</a><a href={imdb_url}>New {tag} Added</a></b>
+
+<blockquote>✨ ᴛɪᴛʟᴇ : <code>{filename} {year}</code>
+
+🎭 ɢᴇɴʀᴇs : <b>{genres}</b>
+📺 ᴏᴛᴛ : <b>{ott}</b>
+🎞️ ǫᴜᴀʟɪᴛʏ : <b>{quality}</b>
+🎧 ᴀᴜᴅɪᴏ : <b>{language}</b>
+🔥 ʀᴀᴛɪɴɢ : <b>{rating}</b>
+{episodes}
+</blockquote>
+
+🔍 <b>sᴇᴀʀᴄʜ →</b> {search_link}"""
+
     IMDB_TEMPLATE_TXT = """<b><a href={url}>{title} (<a href={url}/releaseinfo>{year}</a>)
 
 ʀᴀᴛɪɴɢ : <a href={url}/ratings>{rating}</a>
