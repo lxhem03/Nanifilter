@@ -352,7 +352,7 @@ async def leave_a_chat(bot, message):
     try:
         await bot.send_message(
             chat_id=chat,
-            text='<b>ʜᴇʟʟᴏ ꜰʀɪᴇɴᴅꜱ, \nᴍʏ ᴀᴅᴍɪɴ ʜᴀꜱ ᴛᴏʟᴅ ᴍᴇ ᴛᴏ ʟᴇᴀᴠᴇ ꜰʀᴏᴍ ɢʀᴏᴜᴘ, ꜱᴏ ɪ ʜᴀᴠᴇ ᴛᴏ ɢᴏ ! \nɪꜰ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴀᴅᴅ ᴍᴇ ᴀɢᴀɪɴ ᴄᴏɴᴛᴀᴄᴛ ᴀᴅᴍɪɴ.</b>',
+            text=script.LEAVE_CHAT_TXT,
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👨‍💻 ᴀᴅᴍɪɴ", user_id=int(OWNER))]]))
         await bot.leave_chat(chat)
         await message.reply(f"left the chat `{chat}`")
@@ -385,7 +385,7 @@ async def disable_chat(bot, message):
     try:
         await bot.send_message(
             chat_id=chat_, 
-            text=f'<b>ʜᴇʟʟᴏ ꜰʀɪᴇɴᴅꜱ, \nᴍʏ ᴀᴅᴍɪɴ ʜᴀꜱ ᴛᴏʟᴅ ᴍᴇ ᴛᴏ ʟᴇᴀᴠᴇ ꜰʀᴏᴍ ɢʀᴏᴜᴘ, ꜱᴏ ɪ ʜᴀᴠᴇ ᴛᴏ ɢᴏ ! \nɪꜰ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴀᴅᴅ ᴍᴇ ᴀɢᴀɪɴ ᴄᴏɴᴛᴀᴄᴛ ᴀᴅᴍɪɴ.</b>\n𝖱𝖾𝖺𝗌𝗈𝗇: <code>{reason}</code>',
+            text=script.LEAVE_CHAT_TXT + f"\n𝖱𝖾𝖺𝗌𝗈𝗇: <code>{reason}</code>",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("👨‍💻 ᴀᴅᴍɪɴ", user_id=int(OWNER))]]))
         await bot.leave_chat(chat_)
     except Exception as e:
