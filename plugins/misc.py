@@ -383,14 +383,14 @@ async def save_group(bot, message):
             await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, techifybots))       
             await db.add_chat(message.chat.id, message.chat.title)
         if message.chat.id in temp.BANNED_CHATS:
-            k = await message.reply(text='<b>ᴄʜᴀᴛ ɴᴏᴛ ᴀʟʟᴏᴡᴇᴅ 🐞\n\nᴍʏ ᴀᴅᴍɪɴꜱ ʜᴀꜱ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ ᴍᴇ ꜰʀᴏᴍ ᴡᴏʀᴋɪɴɢ ʜᴇʀᴇ ! ɪꜰ ʏᴏᴜ ᴡᴀɴᴛ ᴛᴏ ᴋɴᴏᴡ ᴍᴏʀᴇ ᴀʙᴏᴜᴛ ɪᴛ ᴄᴏɴᴛᴀᴄᴛ ᴀᴅᴍɪɴ.</b>', reply_markup=InlineKeyboardMarkup(buttons))
+            k = await message.reply(text=script.CHAT_RESTRICTED_TXT, reply_markup=InlineKeyboardMarkup(buttons))
             try:
                 await k.pin()
             except:
                 pass
             await bot.leave_chat(message.chat.id)
             return
-        await message.reply_text(text=f"𝖳𝗁𝖺𝗇𝗄𝗒𝗈𝗎 𝖥𝗈𝗋 𝖠𝖽𝖽𝗂𝗇𝗀 𝖬𝖾 𝖨𝗇 {message.chat.title} ❣️\n\n𝖨𝖿 𝗒𝗈𝗎 𝗁𝖺𝗏𝖾 𝖺𝗇𝗒 𝗊𝗎𝖾𝗌𝗍𝗂𝗈𝗇𝗌 𝗈𝗋 𝖽𝗈𝗎𝖻𝗍𝗌 𝖺𝖻𝗈𝗎𝗍 𝗎𝗌𝗂𝗇𝗀 𝗆𝖾 𝖼𝗈𝗇𝗍𝖺𝖼𝗍 𝖠𝖽𝗆𝗂𝗇.", reply_markup=InlineKeyboardMarkup(buttons))
+        await message.reply_text(text=script.BOT_ADD_TXT.format(message.chat.title), reply_markup=InlineKeyboardMarkup(buttons))
         try:
             await db.connect_group(message.chat.id, message.from_user.id)
         except Exception as e:
