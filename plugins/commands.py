@@ -112,10 +112,10 @@ async def start(client, message):
             try:
                 user_id = int(message.command[1].split("_")[1])
             except ValueError:
-                await message.reply_text("Invalid refer!")
+                await message.reply_text("<b>‼️ ɪɴᴠᴀʟɪᴅ ʀᴇꜰᴇʀ!</b>")
                 return
             if user_id == message.from_user.id:
-                await message.reply_text("ʜᴇʏ ᴅᴜᴅᴇ, ʏᴏᴜ ᴄᴀɴ'ᴛ ʀᴇꜰᴇʀ ʏᴏᴜʀsᴇʟꜰ 🤣!\n\nsʜᴀʀᴇ ʟɪɴᴋ ʏᴏᴜʀ ꜰʀɪᴇɴᴅ ᴀɴᴅ ɢᴇᴛ 𝟙𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛ. ɪꜰ ʏᴏᴜ ᴄᴏʟʟᴇᴄᴛ 𝟙𝟘𝟘 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛs, ᴛʜᴇɴ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ 𝟙 ᴍᴏɴᴛʜ ꜰʀᴇᴇ ᴘʀᴇᴍɪᴜᴍ ᴍᴇᴍʙᴇʀsʜɪᴘ.")
+                await message.reply_text(script.REFER_SELF_ALRT)
                 return
             if referdb.is_user_in_list(message.from_user.id):
                 await message.reply_text("ʏᴏᴜ ʜᴀᴠᴇ ʙᴇᴇɴ ᴀʟʀᴇᴀᴅʏ ɪɴᴠɪᴛᴇᴅ ❗")
@@ -131,8 +131,8 @@ async def start(client, message):
             fromuse = referdb.get_refer_points(user_id) + 10
             if fromuse == 100:
                 referdb.add_refer_points(user_id, 0) 
-                await message.reply_text(f"🎉 𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞ {uss.mention}!")		    
-                await message.reply_text(user_id, f"You have been successfully invited by {message.from_user.mention}!") 	
+                await message.reply_text(script.REFER_CONGRATS_ALRT.format(uss.mention))		    
+                await message.reply_text(user_id, script.REFER_INVITED_ALRT.format(message.from_user.mention)) 	
                 seconds = 2592000
                 if seconds > 0:
                     expiry_time = datetime.datetime.now() + datetime.timedelta(seconds=seconds)
@@ -146,8 +146,8 @@ async def start(client, message):
                     await client.send_message(chat_id=admin, text=f"sᴜᴄᴄᴇssꜰᴜʟʟʏ ᴛᴀsᴋ ᴄᴏᴍᴘʟᴇᴛᴇᴅ ʙʏ:\n\nᴜsᴇʀ: {uss.mention}\n\nɪᴅ: {uss.id}!")	
             else:
                 referdb.add_refer_points(user_id, fromuse)
-                await message.reply_text(f"You have been successfully invited by {uss.mention}!")
-                await client.send_message(user_id, f"𝗖𝗼𝗻𝗴𝗿𝗮𝘁𝘂𝗹𝗮𝘁𝗶𝗼𝗻𝘀! 𝗬𝗼𝘂 𝘄𝗼𝗻 𝟭𝟬 𝗥𝗲𝗳𝗲𝗿𝗿𝗮𝗹 𝗽𝗼𝗶𝗻𝘁 𝗯𝗲𝗰𝗮𝘂𝘀𝗲 𝗬𝗼𝘂 𝗵𝗮𝘃𝗲 𝗯𝗲𝗲𝗻 𝗦𝘂𝗰𝗰𝗲𝘀𝘀𝗳𝘂𝗹𝗹𝘆 𝗜𝗻𝘃𝗶𝘁𝗲𝗱 ☞{message.from_user.mention}!")
+                await message.reply_text(script.REFER_INVITED_ALRT.format(uss.mention))
+                await client.send_message(user_id, script.REFER_CONGRATS_ALRT.format(message.from_user.mention))
             return
 
         if len(message.command) == 2 and message.command[1].startswith('getfile'):
@@ -181,7 +181,7 @@ async def start(client, message):
                         reply_markup = InlineKeyboardMarkup(btn)
                     await message.reply_photo(
                         photo=random.choice(PICS),
-                        caption=(f"{message.from_user.mention}\n\n🛑 ʏᴏᴜ ᴍᴜsᴛ ᴊᴏɪɴ ᴛʜᴇ ʀᴇǫᴜɪʀᴇᴅ ᴄʜᴀɴɴᴇʟs ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ.\n👉 ᴊᴏɪɴ ᴀʟʟ ᴛʜᴇ ʙᴇʟᴏᴡ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ."),
+                        caption=script.FORCESUB_TXT.format(message.from_user.mention),
                         reply_markup=reply_markup,
                         parse_mode=enums.ParseMode.HTML
                     )
