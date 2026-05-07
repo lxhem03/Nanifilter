@@ -61,6 +61,14 @@ async def give_filter(client, message):
                 await auto_filter(client, message)
         except KeyError:
             pass
+    else:
+        search = message.text
+        _, _, total_results = await get_search_results(chat_id=message.chat.id, query=search.lower(), offset=0, filter=True)
+        if total_results == 0:
+            return
+        await message.reply_text(
+            script.ALREADY_AVAILABLE_TXT.format(message.from_user.mention, total_results, search),
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔍 ᴊᴏɪɴ ᴀɴᴅ ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ 🔎", url=GROUP_LINK)]]))
 
 @Client.on_message(filters.private & filters.text & filters.incoming & ~filters.regex(r"^/") & ~filters.regex(r"(https?://)?(t\.me|telegram\.me|telegram\.dog)/"))
 async def pm_text(bot, message):
@@ -86,7 +94,7 @@ async def pm_text(bot, message):
         if pm_search:
             await auto_filter(bot, message)
         else:
-            await message.reply_text(f"<b>{user},\n\n<i>ɪ ᴀᴍ ɴᴏᴛ ᴡᴏʀᴋɪɴɢ ʜᴇʀᴇ. ʏᴏᴜ ᴄᴀɴ ꜱᴇᴀʀᴄʜ ꜰɪʟᴇs ɪɴ ᴏᴜʀ ɢʀᴏᴜᴘ.</i></b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔎 ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ", url=GROUP_LINK)]]))
+            await message.reply_text(text=script.PM_SEARCH_DISABLED_TXT.format(user), reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔎 ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ", url=GROUP_LINK)]]))
             await bot.send_message(chat_id=LOG_CHANNEL, text=(f"<b>#ᴘᴍ_ᴍsɢ\n\n👤 ɴᴀᴍᴇ : {user}\n🆔 ɪᴅ : {user_id}\n💬 ᴍᴇssᴀɢᴇ : {content}</b>"))
     except Exception:
         pass
@@ -101,7 +109,7 @@ async def refercall(bot, query):
         ]]
     reply_markup = InlineKeyboardMarkup(btn)
     await query.message.edit_text(
-        text=(f"ʏᴏᴜʀ ʀᴇꜰᴇʀʀᴀʟ ʟɪɴᴋ:\n\nhttps://telegram.me/{bot.me.username}?start=reff_{query.from_user.id}\n\nꜱʜᴀʀᴇ ᴛʜɪꜱ ʟɪɴᴋ ᴡɪᴛʜ ʏᴏᴜʀ ꜰʀɪᴇɴᴅꜱ.\n\n🎁 ᴇᴀᴄʜ ᴛɪᴍᴇ ᴛʜᴇʏ ᴊᴏɪɴ, ʏᴏᴜ ɢᴇᴛ 𝟷𝟶 ʀᴇꜰᴇʀʀᴀʟ ᴘᴏɪɴᴛꜱ.\n💎 ᴀꜰᴛᴇʀ 𝟷𝟶𝟶 ᴘᴏɪɴᴛꜱ, ʏᴏᴜ ɢᴇᴛ 𝟷 ᴍᴏɴᴛʜ ꜰʀᴇᴇ ᴘʀᴇᴍɪᴜᴍ ᴍᴇᴍʙᴇʀsʜɪᴘ."),
+        text=script.REFER_TXT.format(bot.me.username, query.from_user.id),
         reply_markup=reply_markup,
         parse_mode=enums.ParseMode.HTML
     )
@@ -1461,7 +1469,7 @@ async def auto_filter(client, msg, spoll=False):
             if len(message.text) < 100:
                 message_text = message.text or ""
                 search = message_text.lower()
-                m = await message.reply_text(f"<b><i> 𝖲𝖾𝖺𝗋𝖼𝗁𝗂𝗇𝗀 𝖿𝗈𝗋 '{search}' 🔎</i></b>")
+                m = await message.reply_text(script.SEARCHING_TXT.format(search))
                 find = search.split(" ")
                 search = ""
                 removes = ["in", "upload", "series", "full", "horror", "thriller", "mystery", "print", "file"]
