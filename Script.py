@@ -137,9 +137,7 @@ Bʏ</b> @Manchi_MoviesZ"""
 
     CAPTION = """<b>‣ ɴᴀᴍᴇ : </b><i>{file_name}</i>
 
-<b>‣ ꜱɪᴢᴇ : </b>{file_size}
-
-<b>🍁 ʙʏ : <a href="https://telegram.me/techifybots">[ ᴛᴇᴄʜɪꜰʏʙᴏᴛs ]</a></b>"""
+<b>‣ ꜱɪᴢᴇ : </b>{file_size}"""
 
     UPDATE_NOTIFY_TXT = """</b><a href={poster_url}>📥</a><a href={imdb_url}>New {tag} Added</a></b>
 
